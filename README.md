@@ -6,3 +6,6 @@ It will work with drives that initialize through an external flash PCB.
 You will need to initialize them with said PCB before the drive can interface properly.
 During that process, the drive must remain powered on when you move the SATA data cable to your Linux machine.
 This is the reason for the drive rescan at the beginning of the code.
+
+DISCLAIMER: This script only ignores the boot drive, any other connected drive is assumed to be a target.
+NOTE: NVMe drives are not targeted (/dev/sdX addresses only)
