@@ -7,22 +7,31 @@ CLEAR='\033[0;0m'
 #Summary variables
 passed_drives=0
 failed_drives=0
+#Passthrough arguments
+do_scan=$1
 
-#Refresh drive list 
-echo -e "${YELLOW} Refreshing drive list...${CLEAR}"
-sudo rescan-scsi-bus
+#Refresh drive list (only if do_scan passthrough argument is true)
+#This is only necessary if the hardware does not have/support hot SATA plugs
+if [ "$do_scan" = "scan" ]; then
+	echo -e "${YELLOW} Refreshing drive list...${CLEAR}"
+	sudo rescan-scsi-bus
+else
+	echo -e "${YELLOW} Checking for new drives...${CLEAR}"
+fi
 
-#Obtain drive count
-drive_count=$(lsblk -o NAME | grep -E '^sd' | awk 'END {print NR}')
+#Find boot drive to exclude from operations
+boot_drive=$(sudo lsblk -o NAME,MOUNTPOINT | grep "boot" | awk '$1 ~ /p[0-9]$/ {sub(/p[0-9]$/, "", $1); print $1}')
+
+#Obtain drive count (only searches for /dev/sdX drives)
+drive_count=$(lsblk -o NAME | grep -E '^sd' | grep -vFx "$boot_drive" | awk 'END {print NR}')
 echo -e "${YELLOW}Drive count: $drive_count ${CLEAR}"
-if [ "$drive_count" -lt 2 ]; then
+if [ "$drive_count" -eq 0 ]; then
     echo -e "${RED}No new drives detected! Check connections and try again. ${CLEAR}"
     exit
 else
     echo -e "${GREEN}New drives found.${CLEAR}"
 fi
-#revise boot drive later
-boot_drive="sda"
+
 new_drives=$(lsblk -o NAME | grep -E '^sd' | grep -v "$boot_drive")
 echo -e "${YELLOW}Found drives:\n${BLUE}$new_drives ${CLEAR}"
 
